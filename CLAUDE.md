@@ -43,3 +43,6 @@ wasm-pack build --target web  # WASM build (requires wasm-pack)
 - All topology code over Z/2Z (mod 2 coefficients).
 - Tests verify mathematical correctness (Betti numbers of known spaces).
 - Literate docs: math first, code second.
+
+## Working ledger
+- This strand keeps a local `NEEDS.md` — goals, blockers, and needs — read on entry, updated on exit. Convention: `~/.claude/CLAUDE.md` → "Working ledger: NEEDS.md per strand".
