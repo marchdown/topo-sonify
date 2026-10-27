@@ -17,7 +17,10 @@ pub struct FilteredSimplex {
 
 impl FilteredSimplex {
     pub fn new(simplex: Simplex, filtration: f64) -> Self {
-        Self { simplex, filtration }
+        Self {
+            simplex,
+            filtration,
+        }
     }
 
     pub fn dimension(&self) -> isize {
@@ -54,14 +57,15 @@ impl FilteredComplex {
         let mut filtered: Vec<FilteredSimplex> = Vec::new();
 
         if n == 0 {
-            return Self { simplices: filtered, simplex_to_index: Default::default() };
+            return Self {
+                simplices: filtered,
+                simplex_to_index: Default::default(),
+            };
         }
 
         // Distance function.
         let dist = |i: usize, j: usize| -> f64 {
-            ((points[i][0] - points[j][0]).powi(2)
-                + (points[i][1] - points[j][1]).powi(2))
-            .sqrt()
+            ((points[i][0] - points[j][0]).powi(2) + (points[i][1] - points[j][1]).powi(2)).sqrt()
         };
 
         // 0-simplices: all vertices at filtration 0.
@@ -75,10 +79,7 @@ impl FilteredComplex {
             for j in (i + 1)..n {
                 let d = dist(i, j);
                 if d <= max_radius {
-                    filtered.push(FilteredSimplex::new(
-                        Simplex::from_sorted(vec![i, j]),
-                        d,
-                    ));
+                    filtered.push(FilteredSimplex::new(Simplex::from_sorted(vec![i, j]), d));
                     adj_fwd[i].push(j);
                 }
             }
@@ -115,10 +116,16 @@ impl FilteredComplex {
                     }
                     for &l in &adj_fwd[i][(pi_k + 1)..] {
                         if dist(j, l) <= max_radius && dist(k, l) <= max_radius {
-                            let diameter = [dist(i, j), dist(i, k), dist(i, l),
-                                dist(j, k), dist(j, l), dist(k, l)]
-                                .into_iter()
-                                .fold(0.0_f64, f64::max);
+                            let diameter = [
+                                dist(i, j),
+                                dist(i, k),
+                                dist(i, l),
+                                dist(j, k),
+                                dist(j, l),
+                                dist(k, l),
+                            ]
+                            .into_iter()
+                            .fold(0.0_f64, f64::max);
                             filtered.push(FilteredSimplex::new(
                                 Simplex::from_sorted(vec![i, j, k, l]),
                                 diameter,

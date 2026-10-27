@@ -63,9 +63,8 @@ impl Oscillator {
                 // proper band-limiting. Naive formula 4|t-0.5|-1 has
                 // derivative discontinuities that alias.
                 let sq = if self.phase < 0.5 { 1.0 } else { -1.0 };
-                let _sq_blep = sq
-                    + self.poly_blep(self.phase)
-                    - self.poly_blep((self.phase + 0.5) % 1.0);
+                let _sq_blep =
+                    sq + self.poly_blep(self.phase) - self.poly_blep((self.phase + 0.5) % 1.0);
                 // Leaky integration: tri[n] = c * sq[n] + (1-c) * tri[n-1]
                 // where c = phase_increment * 4 to normalize amplitude.
                 // We store the integrated state in the phase_increment-scaled output.

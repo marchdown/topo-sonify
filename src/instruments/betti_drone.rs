@@ -71,12 +71,7 @@ impl BettiDrone {
             })
             .collect();
 
-        let filter = TopologicalFilter::new(
-            FilterMode::LowPass,
-            base_freq * 8.0,
-            1.5,
-            sample_rate,
-        );
+        let filter = TopologicalFilter::new(FilterMode::LowPass, base_freq * 8.0, 1.5, sample_rate);
 
         Self {
             fundamentals,

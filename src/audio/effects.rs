@@ -51,7 +51,8 @@ impl PersistenceDelay {
             } else {
                 death - birth
             };
-            let delay_secs = (birth / max_filtration) * (self.max_delay_samples as f64 / self.sample_rate);
+            let delay_secs =
+                (birth / max_filtration) * (self.max_delay_samples as f64 / self.sample_rate);
             let delay_samples = ((delay_secs * self.sample_rate) as usize)
                 .min(self.max_delay_samples - 1)
                 .max(1);
@@ -172,9 +173,9 @@ impl CurvatureReverb {
     pub fn from_euler_characteristic(chi: isize, sample_rate: f64) -> Self {
         // Map curvature to reverb time: higher genus → longer reverb
         let rt60 = match chi {
-            c if c > 0 => 0.5 + 0.3 / c as f64,     // short
-            0 => 1.5,                                  // medium
-            c => 1.5 + 0.5 * (-c as f64),             // long
+            c if c > 0 => 0.5 + 0.3 / c as f64, // short
+            0 => 1.5,                           // medium
+            c => 1.5 + 0.5 * (-c as f64),       // long
         };
 
         let damping = match chi {

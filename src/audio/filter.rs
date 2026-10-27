@@ -130,10 +130,9 @@ impl TopologicalFilter {
 
     /// Process a single sample through the filter.
     pub fn process(&mut self, input: f64) -> f64 {
-        let output =
-            self.b0 * input + self.b1 * self.x1 + self.b2 * self.x2
-                - self.a1 * self.y1
-                - self.a2 * self.y2;
+        let output = self.b0 * input + self.b1 * self.x1 + self.b2 * self.x2
+            - self.a1 * self.y1
+            - self.a2 * self.y2;
 
         self.x2 = self.x1;
         self.x1 = input;

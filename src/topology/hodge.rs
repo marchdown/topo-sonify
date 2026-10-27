@@ -176,7 +176,10 @@ impl HodgeLaplacian {
 
     /// Number of zero eigenvalues = β_k (discrete Hodge theorem).
     pub fn kernel_dimension(&self) -> usize {
-        self.eigenvalues().iter().filter(|&&ev| ev.abs() < 1e-10).count()
+        self.eigenvalues()
+            .iter()
+            .filter(|&&ev| ev.abs() < 1e-10)
+            .count()
     }
 
     /// The spectral gap: λ₁ - λ₀. For the graph Laplacian (k=0),

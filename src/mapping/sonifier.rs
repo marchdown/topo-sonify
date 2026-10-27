@@ -171,14 +171,25 @@ impl TopologySonifier {
             dimension: self.complex.dimension(),
             num_simplices: self.complex.size(),
             spectral_gap: self.spectral_gap,
-            persistence_pairs: self.persistence.as_ref().map(|pd| {
-                pd.pairs.iter().map(|p| PersistencePairState {
-                    birth: p.birth,
-                    death: if p.is_essential() { -1.0 } else { p.death },
-                    dimension: p.dimension,
-                    persistence: if p.is_essential() { -1.0 } else { p.persistence() },
-                }).collect()
-            }).unwrap_or_default(),
+            persistence_pairs: self
+                .persistence
+                .as_ref()
+                .map(|pd| {
+                    pd.pairs
+                        .iter()
+                        .map(|p| PersistencePairState {
+                            birth: p.birth,
+                            death: if p.is_essential() { -1.0 } else { p.death },
+                            dimension: p.dimension,
+                            persistence: if p.is_essential() {
+                                -1.0
+                            } else {
+                                p.persistence()
+                            },
+                        })
+                        .collect()
+                })
+                .unwrap_or_default(),
             persistence_entropy: self.persistence.as_ref().map(|p| p.persistence_entropy()),
             total_persistence: self.persistence.as_ref().map(|p| p.total_persistence()),
             hodge_eigenvalues: self.hodge_eigenvalues.clone(),
@@ -203,7 +214,7 @@ pub struct TopologyState {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct PersistencePairState {
     pub birth: f64,
-    pub death: f64,  // -1 for essential
+    pub death: f64, // -1 for essential
     pub dimension: usize,
     pub persistence: f64, // -1 for essential
 }
@@ -226,12 +237,7 @@ mod tests {
 
     #[test]
     fn sonifier_from_point_cloud() {
-        let points = [
-            [0.0, 0.0],
-            [1.0, 0.0],
-            [0.5, 0.866],
-            [2.0, 0.5],
-        ];
+        let points = [[0.0, 0.0], [1.0, 0.0], [0.5, 0.866], [2.0, 0.5]];
         let mut sonifier = TopologySonifier::from_point_cloud(&points, 1.2, 220.0, 44100.0);
         sonifier.pluck_trigger();
         let mut buffer = vec![0.0; 4096];

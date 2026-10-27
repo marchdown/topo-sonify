@@ -3,8 +3,8 @@
 //! Run with: cargo run --example ch2_homology
 
 use topo_sonify::topology::complex::SimplicialComplex;
-use topo_sonify::topology::homology::BettiNumbers;
 use topo_sonify::topology::hodge::HodgeLaplacian;
+use topo_sonify::topology::homology::BettiNumbers;
 
 fn main() {
     println!("═══════════════════════════════════════════════════════");
@@ -33,10 +33,18 @@ fn exercise_2_1() {
     let d1 = k.boundary_matrix_z2(1);
     let d2 = k.boundary_matrix_z2(2);
 
-    println!("  ∂₁ : C₁ → C₀ ({}×{} matrix, {} nonzero entries)",
-        d1.rows, d1.cols, d1.entries.len());
-    println!("  ∂₂ : C₂ → C₁ ({}×{} matrix, {} nonzero entries)",
-        d2.rows, d2.cols, d2.entries.len());
+    println!(
+        "  ∂₁ : C₁ → C₀ ({}×{} matrix, {} nonzero entries)",
+        d1.rows,
+        d1.cols,
+        d1.entries.len()
+    );
+    println!(
+        "  ∂₂ : C₂ → C₁ ({}×{} matrix, {} nonzero entries)",
+        d2.rows,
+        d2.cols,
+        d2.entries.len()
+    );
 
     println!("\n  Dimensions of chain groups:");
     println!("    dim C₀ = {} (vertices)", k.count_dim(0));
@@ -52,20 +60,36 @@ fn exercise_2_1() {
     // β₁ = dim C₁ - rank ∂₁ - rank ∂₂ = 6 - 3 - 3 = 0
     // β₂ = dim C₂ - rank ∂₂ = 4 - 3 = 1
     println!("\n  Betti numbers via rank-nullity:");
-    println!("    β₀ = dim C₀ - rank ∂₁ = {} - {} = {}",
-        k.count_dim(0), rank_d1, k.count_dim(0) - rank_d1);
-    println!("    β₁ = (dim C₁ - rank ∂₁) - rank ∂₂ = ({} - {}) - {} = {}",
-        k.count_dim(1), rank_d1, rank_d2,
-        k.count_dim(1) - rank_d1 - rank_d2);
-    println!("    β₂ = dim C₂ - rank ∂₂ = {} - {} = {}",
-        k.count_dim(2), rank_d2, k.count_dim(2) - rank_d2);
+    println!(
+        "    β₀ = dim C₀ - rank ∂₁ = {} - {} = {}",
+        k.count_dim(0),
+        rank_d1,
+        k.count_dim(0) - rank_d1
+    );
+    println!(
+        "    β₁ = (dim C₁ - rank ∂₁) - rank ∂₂ = ({} - {}) - {} = {}",
+        k.count_dim(1),
+        rank_d1,
+        rank_d2,
+        k.count_dim(1) - rank_d1 - rank_d2
+    );
+    println!(
+        "    β₂ = dim C₂ - rank ∂₂ = {} - {} = {}",
+        k.count_dim(2),
+        rank_d2,
+        k.count_dim(2) - rank_d2
+    );
 
     let betti = BettiNumbers::compute(&k);
     println!("\n  Computed Betti: {:?}", betti.values);
-    println!("  Euler check: χ = {} - {} + {} = {} = β₀ - β₁ + β₂ = {} ✓\n",
-        k.f_vector()[0], k.f_vector()[1], k.f_vector()[2],
+    println!(
+        "  Euler check: χ = {} - {} + {} = {} = β₀ - β₁ + β₂ = {} ✓\n",
+        k.f_vector()[0],
+        k.f_vector()[1],
+        k.f_vector()[2],
         k.euler_characteristic(),
-        betti.euler_characteristic());
+        betti.euler_characteristic()
+    );
 }
 
 /// Exercise 2.2: The triangle boundary — detecting a loop.
@@ -115,8 +139,12 @@ fn exercise_2_3() {
     println!("  The cycle c is now a boundary → [c] = 0 in H₁.\n");
 
     let betti = BettiNumbers::compute(&k);
-    println!("  β₀ = {}, β₁ = {} (loop killed!), χ = {}\n",
-        betti.b0(), betti.b1(), betti.euler_characteristic());
+    println!(
+        "  β₀ = {}, β₁ = {} (loop killed!), χ = {}\n",
+        betti.b0(),
+        betti.b1(),
+        betti.euler_characteristic()
+    );
 }
 
 /// Exercise 2.4: Hodge Laplacian eigenvalues and the discrete Hodge theorem.
@@ -127,10 +155,19 @@ fn exercise_2_4() {
     println!("── Exercise 2.4: Hodge Laplacian and spectral information ──");
 
     let spaces: Vec<(&str, Vec<Vec<usize>>)> = vec![
-        ("Path graph P₃ (3 vertices, 2 edges)", vec![vec![0,1], vec![1,2]]),
-        ("Cycle C₃ (triangle boundary)", vec![vec![0,1], vec![1,2], vec![0,2]]),
-        ("Filled triangle", vec![vec![0,1,2]]),
-        ("Hollow tetrahedron (S²)", vec![vec![0,1,2], vec![0,1,3], vec![0,2,3], vec![1,2,3]]),
+        (
+            "Path graph P₃ (3 vertices, 2 edges)",
+            vec![vec![0, 1], vec![1, 2]],
+        ),
+        (
+            "Cycle C₃ (triangle boundary)",
+            vec![vec![0, 1], vec![1, 2], vec![0, 2]],
+        ),
+        ("Filled triangle", vec![vec![0, 1, 2]]),
+        (
+            "Hollow tetrahedron (S²)",
+            vec![vec![0, 1, 2], vec![0, 1, 3], vec![0, 2, 3], vec![1, 2, 3]],
+        ),
     ];
 
     for (name, simplices) in &spaces {
@@ -144,12 +181,19 @@ fn exercise_2_4() {
         println!("    Betti: {:?}", betti.values);
 
         for dim in 0..=k.dimension() as usize {
-            if k.count_dim(dim as isize) == 0 { continue; }
+            if k.count_dim(dim as isize) == 0 {
+                continue;
+            }
             let l = HodgeLaplacian::compute(&k, dim);
             let evs = l.eigenvalues();
             let evs_str: Vec<String> = evs.iter().map(|e| format!("{:.2}", e)).collect();
             println!("    L_{} eigenvalues: [{}]", dim, evs_str.join(", "));
-            println!("    dim(ker L_{}) = {} = β_{} ✓", dim, l.kernel_dimension(), dim);
+            println!(
+                "    dim(ker L_{}) = {} = β_{} ✓",
+                dim,
+                l.kernel_dimension(),
+                dim
+            );
         }
 
         // For the graph Laplacian, the spectral gap tells us about connectivity.
@@ -174,7 +218,10 @@ fn exercise_2_5() {
         ("Three components with loops", vec![3, 2, 0]),
     ];
 
-    println!("  {:30} │ {:8} │ {:6} │ {:5} │ {:6}", "Space", "β", "voices", "LFOs", "subs");
+    println!(
+        "  {:30} │ {:8} │ {:6} │ {:5} │ {:6}",
+        "Space", "β", "voices", "LFOs", "subs"
+    );
     println!("  ───────────────────────────────┼──────────┼────────┼───────┼──────");
 
     for (name, betti) in &test_cases {
@@ -182,10 +229,14 @@ fn exercise_2_5() {
         let b1 = betti.get(1).copied().unwrap_or(0);
         let b2 = betti.get(2).copied().unwrap_or(0);
 
-        println!("  {:30} │ {:8} │ {:>6} │ {:>5} │ {:>5}",
+        println!(
+            "  {:30} │ {:8} │ {:>6} │ {:>5} │ {:>5}",
             name,
             format!("{:?}", betti),
-            b0, b1, b2);
+            b0,
+            b1,
+            b2
+        );
     }
 
     println!("\n  β₀ → oscillator voices (more components = chord, not unison)");

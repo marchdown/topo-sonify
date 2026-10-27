@@ -91,7 +91,10 @@ impl PersistenceDiagram {
         let mut critical_radii: Vec<f64> = Vec::new();
         critical_radii.push(0.0); // r=0: all vertices, no edges
         for &(d, _, _) in &edges {
-            if critical_radii.last().is_none_or(|&last| (d - last).abs() > 1e-12) {
+            if critical_radii
+                .last()
+                .is_none_or(|&last| (d - last).abs() > 1e-12)
+            {
                 critical_radii.push(d);
             }
         }
@@ -110,7 +113,11 @@ impl PersistenceDiagram {
                 active_features.push(Vec::new());
             }
 
-            for (dim, active) in active_features.iter_mut().enumerate().take(betti.values.len()) {
+            for (dim, active) in active_features
+                .iter_mut()
+                .enumerate()
+                .take(betti.values.len())
+            {
                 let prev = if dim < prev_betti.values.len() {
                     prev_betti.values[dim]
                 } else {

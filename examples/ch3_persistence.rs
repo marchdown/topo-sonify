@@ -3,12 +3,12 @@
 //! Run with: cargo run --example ch3_persistence
 
 use topo_sonify::topology::complex::SimplicialComplex;
+use topo_sonify::topology::distances::{bottleneck_distance, wasserstein_distance};
 use topo_sonify::topology::filtration::FilteredComplex;
 use topo_sonify::topology::homology::BettiNumbers;
+use topo_sonify::topology::morse::DiscreteMorseFunction;
 use topo_sonify::topology::persistence::{PersistenceDiagram, PersistencePair};
 use topo_sonify::topology::standard_persistence::{compute_persistence, compute_persistence_twist};
-use topo_sonify::topology::distances::{bottleneck_distance, wasserstein_distance};
-use topo_sonify::topology::morse::DiscreteMorseFunction;
 
 fn main() {
     println!("═══════════════════════════════════════════════════════");
@@ -42,17 +42,35 @@ fn exercise_3_1() {
         } else {
             format!("{:?}", bdry)
         };
-        println!("    σ_{} = {:?}  dim={}  filt={:.4}  ∂={}",
-            i, fs.simplex.vertices(), fs.dimension(), fs.filtration, bdry_str);
+        println!(
+            "    σ_{} = {:?}  dim={}  filt={:.4}  ∂={}",
+            i,
+            fs.simplex.vertices(),
+            fs.dimension(),
+            fs.filtration,
+            bdry_str
+        );
     }
 
     let pd = compute_persistence(&fc);
     println!("\n  Persistence pairs (standard algorithm):");
     for p in &pd.pairs {
-        let death_str = if p.is_essential() { "∞".to_string() } else { format!("{:.4}", p.death) };
-        println!("    H_{}: ({:.4}, {})  persistence = {}",
-            p.dimension, p.birth, death_str,
-            if p.is_essential() { "∞".to_string() } else { format!("{:.4}", p.persistence()) });
+        let death_str = if p.is_essential() {
+            "∞".to_string()
+        } else {
+            format!("{:.4}", p.death)
+        };
+        println!(
+            "    H_{}: ({:.4}, {})  persistence = {}",
+            p.dimension,
+            p.birth,
+            death_str,
+            if p.is_essential() {
+                "∞".to_string()
+            } else {
+                format!("{:.4}", p.persistence())
+            }
+        );
     }
 
     println!("\n  Interpretation:");
@@ -60,11 +78,15 @@ fn exercise_3_1() {
         if p.dimension == 0 && p.is_essential() {
             println!("    H₀ essential: the final connected component (born at r=0, never dies)");
         } else if p.dimension == 0 {
-            println!("    H₀ ({:.4}, {:.4}): a component born at r={:.4}, merged at r={:.4}",
-                p.birth, p.death, p.birth, p.death);
+            println!(
+                "    H₀ ({:.4}, {:.4}): a component born at r={:.4}, merged at r={:.4}",
+                p.birth, p.death, p.birth, p.death
+            );
         } else if p.dimension == 1 {
-            println!("    H₁ ({:.4}, {:.4}): a loop born at r={:.4}, filled at r={:.4}",
-                p.birth, p.death, p.birth, p.death);
+            println!(
+                "    H₁ ({:.4}, {:.4}): a loop born at r={:.4}, filled at r={:.4}",
+                p.birth, p.death, p.birth, p.death
+            );
         }
     }
     println!();
@@ -77,8 +99,11 @@ fn exercise_3_1() {
 fn exercise_3_2() {
     println!("── Exercise 3.2: Standard vs. twist optimization ────────");
     let points = [
-        [0.0, 0.0], [1.0, 0.0], [0.5, 0.866],
-        [2.0, 0.0], [1.5, 0.866],
+        [0.0, 0.0],
+        [1.0, 0.0],
+        [0.5, 0.866],
+        [2.0, 0.0],
+        [1.5, 0.866],
     ];
     let fc = FilteredComplex::vietoris_rips(&points, 3.0);
 
@@ -89,13 +114,21 @@ fn exercise_3_2() {
 
     println!("  Standard algorithm:");
     for p in &pd_std.pairs {
-        let d = if p.is_essential() { "∞".to_string() } else { format!("{:.3}", p.death) };
+        let d = if p.is_essential() {
+            "∞".to_string()
+        } else {
+            format!("{:.3}", p.death)
+        };
         println!("    H_{}: ({:.3}, {})", p.dimension, p.birth, d);
     }
 
     println!("\n  Twist optimization:");
     for p in &pd_twist.pairs {
-        let d = if p.is_essential() { "∞".to_string() } else { format!("{:.3}", p.death) };
+        let d = if p.is_essential() {
+            "∞".to_string()
+        } else {
+            format!("{:.3}", p.death)
+        };
         println!("    H_{}: ({:.3}, {})", p.dimension, p.birth, d);
     }
 
@@ -119,26 +152,38 @@ fn exercise_3_3() {
     println!("  Points: corners of the unit square.");
     println!("  Side length = 1.0, diagonal = √2 ≈ 1.414.\n");
 
-    let h1_pairs: Vec<&PersistencePair> = pd.pairs.iter()
-        .filter(|p| p.dimension == 1)
-        .collect();
+    let h1_pairs: Vec<&PersistencePair> = pd.pairs.iter().filter(|p| p.dimension == 1).collect();
 
     if let Some(p) = h1_pairs.first() {
         println!("  The H₁ feature:");
-        println!("    Born at r = {:.4} (all four side edges present → cycle)", p.birth);
-        println!("    Dies at r = {:.4} (diagonal edge creates a triangle → fills loop)", p.death);
+        println!(
+            "    Born at r = {:.4} (all four side edges present → cycle)",
+            p.birth
+        );
+        println!(
+            "    Dies at r = {:.4} (diagonal edge creates a triangle → fills loop)",
+            p.death
+        );
         println!("    Persistence = {:.4}", p.persistence());
         println!("\n  This is the loop going 0→1→2→3→0 around the square.");
-        println!("  It lives for Δr = {:.4} before being killed.\n", p.persistence());
+        println!(
+            "  It lives for Δr = {:.4} before being killed.\n",
+            p.persistence()
+        );
     }
 
     // Also show the H₀ merging story.
-    let h0_pairs: Vec<&PersistencePair> = pd.pairs.iter()
+    let h0_pairs: Vec<&PersistencePair> = pd
+        .pairs
+        .iter()
         .filter(|p| p.dimension == 0 && !p.is_essential())
         .collect();
     println!("  H₀ story (components merging):");
     for p in &h0_pairs {
-        println!("    Component born at r={:.4}, merged at r={:.4}", p.birth, p.death);
+        println!(
+            "    Component born at r={:.4}, merged at r={:.4}",
+            p.birth, p.death
+        );
     }
     println!();
 }
@@ -151,16 +196,40 @@ fn exercise_3_4() {
 
     let uniform = PersistenceDiagram {
         pairs: vec![
-            PersistencePair { birth: 0.0, death: 1.0, dimension: 0 },
-            PersistencePair { birth: 0.0, death: 1.0, dimension: 0 },
-            PersistencePair { birth: 0.0, death: 1.0, dimension: 0 },
+            PersistencePair {
+                birth: 0.0,
+                death: 1.0,
+                dimension: 0,
+            },
+            PersistencePair {
+                birth: 0.0,
+                death: 1.0,
+                dimension: 0,
+            },
+            PersistencePair {
+                birth: 0.0,
+                death: 1.0,
+                dimension: 0,
+            },
         ],
     };
     let skewed = PersistenceDiagram {
         pairs: vec![
-            PersistencePair { birth: 0.0, death: 10.0, dimension: 0 },
-            PersistencePair { birth: 0.0, death: 1.0, dimension: 0 },
-            PersistencePair { birth: 0.0, death: 1.0, dimension: 0 },
+            PersistencePair {
+                birth: 0.0,
+                death: 10.0,
+                dimension: 0,
+            },
+            PersistencePair {
+                birth: 0.0,
+                death: 1.0,
+                dimension: 0,
+            },
+            PersistencePair {
+                birth: 0.0,
+                death: 1.0,
+                dimension: 0,
+            },
         ],
     };
 
@@ -184,16 +253,34 @@ fn exercise_3_5() {
     println!("── Exercise 3.5: Diagram distances ──────────────────────");
 
     let d1 = vec![
-        PersistencePair { birth: 0.0, death: 1.0, dimension: 0 },
-        PersistencePair { birth: 0.5, death: 2.0, dimension: 1 },
+        PersistencePair {
+            birth: 0.0,
+            death: 1.0,
+            dimension: 0,
+        },
+        PersistencePair {
+            birth: 0.5,
+            death: 2.0,
+            dimension: 1,
+        },
     ];
     let d2 = vec![
-        PersistencePair { birth: 0.0, death: 1.5, dimension: 0 },
-        PersistencePair { birth: 0.5, death: 2.5, dimension: 1 },
+        PersistencePair {
+            birth: 0.0,
+            death: 1.5,
+            dimension: 0,
+        },
+        PersistencePair {
+            birth: 0.5,
+            death: 2.5,
+            dimension: 1,
+        },
     ];
-    let d3 = vec![
-        PersistencePair { birth: 0.0, death: 5.0, dimension: 0 },
-    ];
+    let d3 = vec![PersistencePair {
+        birth: 0.0,
+        death: 5.0,
+        dimension: 0,
+    }];
 
     println!("  D₁ = [(0,1), (0.5,2)]");
     println!("  D₂ = [(0,1.5), (0.5,2.5)]   (shifted by 0.5 in death)");
@@ -204,7 +291,10 @@ fn exercise_3_5() {
     let w1_12 = wasserstein_distance(&d1, &d2, 1.0);
     let w1_13 = wasserstein_distance(&d1, &d3, 1.0);
 
-    println!("\n  d_B(D₁, D₂) = {:.4}  (small shift → small distance)", bn_12);
+    println!(
+        "\n  d_B(D₁, D₂) = {:.4}  (small shift → small distance)",
+        bn_12
+    );
     println!("  d_B(D₁, D₃) = {:.4}  (very different diagrams)", bn_13);
     println!("  W₁(D₁, D₂)  = {:.4}", w1_12);
     println!("  W₁(D₁, D₃)  = {:.4}", w1_13);
@@ -228,7 +318,11 @@ fn exercise_3_6() {
     k.insert_simplex(&[1, 2, 3]);
 
     println!("  Space: hollow tetrahedron ≅ S²");
-    println!("  f-vector: {:?} ({} total simplices)\n", k.f_vector(), k.size());
+    println!(
+        "  f-vector: {:?} ({} total simplices)\n",
+        k.f_vector(),
+        k.size()
+    );
 
     let betti = BettiNumbers::compute(&k);
     let morse = DiscreteMorseFunction::from_vertex_function(&k, &[0.0, 1.0, 2.0, 3.0]);
@@ -237,9 +331,13 @@ fn exercise_3_6() {
     println!("  Vertex function: f(v₀)=0, f(v₁)=1, f(v₂)=2, f(v₃)=3");
     println!("\n  Gradient pairs (matched simplex pairs):");
     for (sigma, tau) in &morse.gradient_pairs {
-        println!("    {:?} ↔ {:?}  (dim {} paired with dim {})",
-            sigma.vertices(), tau.vertices(),
-            sigma.dimension(), tau.dimension());
+        println!(
+            "    {:?} ↔ {:?}  (dim {} paired with dim {})",
+            sigma.vertices(),
+            tau.vertices(),
+            sigma.dimension(),
+            tau.dimension()
+        );
     }
 
     println!("\n  Critical simplices (unpaired):");
@@ -252,16 +350,28 @@ fn exercise_3_6() {
         let c = counts.get(dim).copied().unwrap_or(0);
         let b = betti.values.get(dim).copied().unwrap_or(0);
         let check = if c >= b { "✓" } else { "✗" };
-        println!("    dim {}: c_{} = {} ≥ β_{} = {}  {}", dim, dim, c, dim, b, check);
+        println!(
+            "    dim {}: c_{} = {} ≥ β_{} = {}  {}",
+            dim, dim, c, dim, b, check
+        );
     }
 
     println!("\n  Strong Morse inequality (Euler):");
-    println!("    Σ(-1)^k c_k = {} = χ(S²) = {} ✓",
-        morse.euler_from_critical(), k.euler_characteristic());
+    println!(
+        "    Σ(-1)^k c_k = {} = χ(S²) = {} ✓",
+        morse.euler_from_critical(),
+        k.euler_characteristic()
+    );
 
     let reduction = k.size() - morse.critical.len();
-    println!("\n  The Morse complex has {} critical simplices instead of {} total.",
-        morse.critical.len(), k.size());
-    println!("  Reduction: {} simplices eliminated by gradient pairing.", reduction);
+    println!(
+        "\n  The Morse complex has {} critical simplices instead of {} total.",
+        morse.critical.len(),
+        k.size()
+    );
+    println!(
+        "  Reduction: {} simplices eliminated by gradient pairing.",
+        reduction
+    );
     println!("  Computing persistence on the Morse complex is vastly faster.\n");
 }

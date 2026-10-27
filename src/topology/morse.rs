@@ -40,10 +40,7 @@ impl DiscreteMorseFunction {
     /// order of increasing f-value. Each unpaired face σ is paired with
     /// its lowest unpaired coface τ if f(τ) ≤ f(σ) + ε (within the same
     /// sublevel set).
-    pub fn from_vertex_function(
-        complex: &SimplicialComplex,
-        vertex_values: &[f64],
-    ) -> Self {
+    pub fn from_vertex_function(complex: &SimplicialComplex, vertex_values: &[f64]) -> Self {
         let _d = complex.dimension();
         let mut all_simplices: Vec<(Simplex, f64)> = Vec::new();
 
@@ -114,7 +111,12 @@ impl DiscreteMorseFunction {
 
     /// Count critical simplices by dimension.
     pub fn critical_counts(&self) -> Vec<usize> {
-        let max_dim = self.critical.iter().map(|s| s.dimension()).max().unwrap_or(-1);
+        let max_dim = self
+            .critical
+            .iter()
+            .map(|s| s.dimension())
+            .max()
+            .unwrap_or(-1);
         if max_dim < 0 {
             return vec![];
         }
@@ -143,7 +145,13 @@ impl DiscreteMorseFunction {
         self.critical_counts()
             .iter()
             .enumerate()
-            .map(|(k, &c)| if k % 2 == 0 { c as isize } else { -(c as isize) })
+            .map(|(k, &c)| {
+                if k % 2 == 0 {
+                    c as isize
+                } else {
+                    -(c as isize)
+                }
+            })
             .sum()
     }
 }

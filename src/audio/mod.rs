@@ -1,7 +1,7 @@
-pub mod oscillator;
-pub mod filter;
 pub mod effects;
+pub mod filter;
+pub mod oscillator;
 
+pub use effects::{BettiDistortion, CurvatureReverb, PersistenceDelay};
+pub use filter::{FilterMode, TopologicalFilter};
 pub use oscillator::{Oscillator, Waveform};
-pub use filter::{TopologicalFilter, FilterMode};
-pub use effects::{PersistenceDelay, CurvatureReverb, BettiDistortion};
