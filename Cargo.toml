@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 description = "Topology-first sonification engine — simplicial complexes become sound"
 license = "MIT"
+repository = "https://github.com/marchdown/topo-sonify"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
