@@ -18,11 +18,13 @@ use super::persistence::PersistencePair;
 /// Complexity: O(n^{1.5} log n) where n = max(|D₁|, |D₂|).
 pub fn bottleneck_distance(d1: &[PersistencePair], d2: &[PersistencePair]) -> f64 {
     // Collect all finite points + diagonal projections.
-    let pts1: Vec<[f64; 2]> = d1.iter()
+    let pts1: Vec<[f64; 2]> = d1
+        .iter()
         .filter(|p| !p.is_essential())
         .map(|p| [p.birth, p.death])
         .collect();
-    let pts2: Vec<[f64; 2]> = d2.iter()
+    let pts2: Vec<[f64; 2]> = d2
+        .iter()
         .filter(|p| !p.is_essential())
         .map(|p| [p.birth, p.death])
         .collect();
@@ -133,7 +135,7 @@ fn has_perfect_matching(pts1: &[[f64; 2]], pts2: &[[f64; 2]], delta: f64) -> boo
 
     for j in 0..n2 {
         let left = n1 + j; // diagonal proxy for pts2[j]
-        // pts2[j] goes to diagonal: left node (n1+j) matches right node j
+                           // pts2[j] goes to diagonal: left node (n1+j) matches right node j
         let diag_dist = (pts2[j][1] - pts2[j][0]).abs() / 2.0;
         if diag_dist <= delta + 1e-12 {
             adj[left].push(j);
@@ -168,16 +170,14 @@ fn has_perfect_matching(pts1: &[[f64; 2]], pts2: &[[f64; 2]], delta: f64) -> boo
 ///
 /// Uses the Hungarian algorithm for exact computation.
 /// Complexity: O(n³).
-pub fn wasserstein_distance(
-    d1: &[PersistencePair],
-    d2: &[PersistencePair],
-    p: f64,
-) -> f64 {
-    let pts1: Vec<[f64; 2]> = d1.iter()
+pub fn wasserstein_distance(d1: &[PersistencePair], d2: &[PersistencePair], p: f64) -> f64 {
+    let pts1: Vec<[f64; 2]> = d1
+        .iter()
         .filter(|p| !p.is_essential())
         .map(|p| [p.birth, p.death])
         .collect();
-    let pts2: Vec<[f64; 2]> = d2.iter()
+    let pts2: Vec<[f64; 2]> = d2
+        .iter()
         .filter(|p| !p.is_essential())
         .map(|p| [p.birth, p.death])
         .collect();
@@ -307,8 +307,16 @@ mod tests {
     #[test]
     fn identical_diagrams_zero_distance() {
         let pairs = vec![
-            PersistencePair { birth: 0.0, death: 1.0, dimension: 0 },
-            PersistencePair { birth: 0.5, death: 2.0, dimension: 1 },
+            PersistencePair {
+                birth: 0.0,
+                death: 1.0,
+                dimension: 0,
+            },
+            PersistencePair {
+                birth: 0.5,
+                death: 2.0,
+                dimension: 1,
+            },
         ];
         assert!((bottleneck_distance(&pairs, &pairs) - 0.0).abs() < 1e-10);
         assert!((wasserstein_distance(&pairs, &pairs, 1.0) - 0.0).abs() < 1e-10);
@@ -316,12 +324,16 @@ mod tests {
 
     #[test]
     fn wasserstein_simple() {
-        let d1 = vec![
-            PersistencePair { birth: 0.0, death: 1.0, dimension: 0 },
-        ];
-        let d2 = vec![
-            PersistencePair { birth: 0.0, death: 2.0, dimension: 0 },
-        ];
+        let d1 = vec![PersistencePair {
+            birth: 0.0,
+            death: 1.0,
+            dimension: 0,
+        }];
+        let d2 = vec![PersistencePair {
+            birth: 0.0,
+            death: 2.0,
+            dimension: 0,
+        }];
         // The only finite pair differs by 1 in the death coordinate.
         let w1 = wasserstein_distance(&d1, &d2, 1.0);
         assert!((w1 - 1.0).abs() < 1e-8);
@@ -329,12 +341,16 @@ mod tests {
 
     #[test]
     fn bottleneck_shifted() {
-        let d1 = vec![
-            PersistencePair { birth: 0.0, death: 1.0, dimension: 0 },
-        ];
-        let d2 = vec![
-            PersistencePair { birth: 0.0, death: 1.5, dimension: 0 },
-        ];
+        let d1 = vec![PersistencePair {
+            birth: 0.0,
+            death: 1.0,
+            dimension: 0,
+        }];
+        let d2 = vec![PersistencePair {
+            birth: 0.0,
+            death: 1.5,
+            dimension: 0,
+        }];
         let bn = bottleneck_distance(&d1, &d2);
         assert!((bn - 0.5).abs() < 1e-8);
     }

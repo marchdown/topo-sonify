@@ -76,7 +76,13 @@ impl BettiNumbers {
         self.values
             .iter()
             .enumerate()
-            .map(|(k, &b)| if k % 2 == 0 { b as isize } else { -(b as isize) })
+            .map(|(k, &b)| {
+                if k % 2 == 0 {
+                    b as isize
+                } else {
+                    -(b as isize)
+                }
+            })
             .sum()
     }
 }
@@ -84,16 +90,14 @@ impl BettiNumbers {
 /// A chain complex C_n → C_{n-1} → ... → C_0 with boundary maps.
 #[derive(Debug, Clone)]
 pub struct ChainComplex {
-    pub dimensions: Vec<usize>, // dim(C_k)
+    pub dimensions: Vec<usize>,     // dim(C_k)
     pub boundary_ranks: Vec<usize>, // rank(∂_k) for k = 1, ..., n
 }
 
 impl ChainComplex {
     pub fn from_complex(complex: &SimplicialComplex) -> Self {
         let d = complex.dimension();
-        let dimensions: Vec<usize> = (0..=d)
-            .map(|k| complex.simplices_of_dim(k).len())
-            .collect();
+        let dimensions: Vec<usize> = (0..=d).map(|k| complex.simplices_of_dim(k).len()).collect();
         let boundary_ranks: Vec<usize> = (1..=d)
             .map(|k| complex.boundary_matrix_z2(k).rank_z2())
             .collect();

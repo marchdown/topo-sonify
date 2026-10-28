@@ -137,8 +137,10 @@ mod tests {
         let tri = Simplex::new([0, 1, 2]);
         let faces = tri.faces();
         assert_eq!(faces.len(), 3);
-        let face_verts: Vec<Vec<usize>> =
-            faces.into_iter().map(|(_, f)| f.vertices().to_vec()).collect();
+        let face_verts: Vec<Vec<usize>> = faces
+            .into_iter()
+            .map(|(_, f)| f.vertices().to_vec())
+            .collect();
         assert!(face_verts.contains(&vec![1, 2]));
         assert!(face_verts.contains(&vec![0, 2]));
         assert!(face_verts.contains(&vec![0, 1]));

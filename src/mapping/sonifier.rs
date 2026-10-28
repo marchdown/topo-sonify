@@ -152,7 +152,10 @@ impl TopologySonifier {
         let delayed = self.delay.process(distorted);
         let reverbed = self.reverb.process(delayed);
 
-        (reverbed * self.master_volume).clamp(-1.0, 1.0)
+        // The only limiter in the chain. A rich effects chain has peaks above full scale; a hard
+        // clamp would flatten them into square edges, tanh rounds them off (and is within 5% of
+        // linear below 0.4). Output stays strictly inside (-1, 1).
+        (reverbed * self.master_volume).tanh()
     }
 
     /// Fill a buffer with audio.
@@ -171,14 +174,25 @@ impl TopologySonifier {
             dimension: self.complex.dimension(),
             num_simplices: self.complex.size(),
             spectral_gap: self.spectral_gap,
-            persistence_pairs: self.persistence.as_ref().map(|pd| {
-                pd.pairs.iter().map(|p| PersistencePairState {
-                    birth: p.birth,
-                    death: if p.is_essential() { -1.0 } else { p.death },
-                    dimension: p.dimension,
-                    persistence: if p.is_essential() { -1.0 } else { p.persistence() },
-                }).collect()
-            }).unwrap_or_default(),
+            persistence_pairs: self
+                .persistence
+                .as_ref()
+                .map(|pd| {
+                    pd.pairs
+                        .iter()
+                        .map(|p| PersistencePairState {
+                            birth: p.birth,
+                            death: if p.is_essential() { -1.0 } else { p.death },
+                            dimension: p.dimension,
+                            persistence: if p.is_essential() {
+                                -1.0
+                            } else {
+                                p.persistence()
+                            },
+                        })
+                        .collect()
+                })
+                .unwrap_or_default(),
             persistence_entropy: self.persistence.as_ref().map(|p| p.persistence_entropy()),
             total_persistence: self.persistence.as_ref().map(|p| p.total_persistence()),
             hodge_eigenvalues: self.hodge_eigenvalues.clone(),
@@ -203,7 +217,7 @@ pub struct TopologyState {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct PersistencePairState {
     pub birth: f64,
-    pub death: f64,  // -1 for essential
+    pub death: f64, // -1 for essential
     pub dimension: usize,
     pub persistence: f64, // -1 for essential
 }
@@ -226,12 +240,7 @@ mod tests {
 
     #[test]
     fn sonifier_from_point_cloud() {
-        let points = [
-            [0.0, 0.0],
-            [1.0, 0.0],
-            [0.5, 0.866],
-            [2.0, 0.5],
-        ];
+        let points = [[0.0, 0.0], [1.0, 0.0], [0.5, 0.866], [2.0, 0.5]];
         let mut sonifier = TopologySonifier::from_point_cloud(&points, 1.2, 220.0, 44100.0);
         sonifier.pluck_trigger();
         let mut buffer = vec![0.0; 4096];
@@ -242,6 +251,65 @@ mod tests {
         assert!(!state.persistence_pairs.is_empty());
         // Verify Hodge eigenvalues were computed.
         assert!(!state.hodge_eigenvalues.is_empty());
+    }
+
+    /// Render three seconds with the default mixer and check the result is a usable signal and
+    /// not a saturated one. Regression for runaway delay feedback: the loop gain grew with the
+    /// number of persistence pairs, so a 10-point circle came out as a full-scale square wave
+    /// (RMS 1.0), worse with every point added.
+    fn assert_usable_output(points: &[[f64; 2]], radius: f64) {
+        let sr = 48000.0;
+        let mut sonifier = TopologySonifier::from_point_cloud(points, radius, 220.0, sr);
+        let mut seconds = Vec::new();
+        for _ in 0..3 {
+            let mut buf = vec![0.0; sr as usize];
+            sonifier.fill_buffer(&mut buf);
+            assert!(buf.iter().all(|x| x.is_finite()), "non-finite sample");
+            let flat = buf.iter().filter(|x| x.abs() >= 0.999).count();
+            assert_eq!(
+                flat, 0,
+                "{flat} flat-topped samples: the output is saturating"
+            );
+            seconds.push((buf.iter().map(|x| x * x).sum::<f64>() / buf.len() as f64).sqrt());
+        }
+        for (i, rms) in seconds.iter().enumerate() {
+            assert!(
+                // Broken output measured RMS 0.95 or more; working output measures 0.4 to 0.6.
+                (0.02..0.7).contains(rms),
+                "second {i}: rms {rms:.3} is silent or saturated"
+            );
+        }
+        assert!(
+            seconds[2] <= 1.5 * seconds[0],
+            "output grows over time: rms {:?}",
+            seconds
+        );
+    }
+
+    #[test]
+    fn circle_preset_output_is_usable() {
+        // The page's circle preset: 10 points on a circle of radius 0.3, slider radius 0.5.
+        let points: Vec<[f64; 2]> = (0..10)
+            .map(|i| {
+                let a = i as f64 / 10.0 * std::f64::consts::TAU;
+                [0.5 + 0.3 * a.cos(), 0.5 + 0.3 * a.sin()]
+            })
+            .collect();
+        assert_usable_output(&points, 0.5);
+    }
+
+    #[test]
+    fn larger_cloud_output_is_usable() {
+        // 30 deterministic pseudo-random points: more persistence pairs, so more delay taps.
+        let mut state: u64 = 12345;
+        let mut next = || {
+            state = state
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
+            (state >> 11) as f64 / (1u64 << 53) as f64
+        };
+        let points: Vec<[f64; 2]> = (0..30).map(|_| [next(), next()]).collect();
+        assert_usable_output(&points, 0.2);
     }
 
     #[test]

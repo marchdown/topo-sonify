@@ -31,7 +31,10 @@ fn exercise_1_1() {
     let mut k = SimplicialComplex::new();
     k.insert_simplex(&[0, 1, 2]);
 
-    println!("  Total simplices: {}  (we inserted 1, closure added 6)", k.size());
+    println!(
+        "  Total simplices: {}  (we inserted 1, closure added 6)",
+        k.size()
+    );
     println!("  f-vector: {:?}", k.f_vector());
     println!("  Euler characteristic: χ = {}", k.euler_characteristic());
     println!("  Dimension: {}", k.dimension());
@@ -69,14 +72,21 @@ fn exercise_1_2() {
     k.insert_simplex(&[1, 2, 3]);
 
     println!("  f-vector: {:?}", k.f_vector());
-    println!("  χ = {} - {} + {} = {}",
-        k.f_vector()[0], k.f_vector()[1], k.f_vector()[2],
-        k.euler_characteristic());
+    println!(
+        "  χ = {} - {} + {} = {}",
+        k.f_vector()[0],
+        k.f_vector()[1],
+        k.f_vector()[2],
+        k.euler_characteristic()
+    );
 
     let betti = BettiNumbers::compute(&k);
     println!("  Betti numbers: β = {:?}", betti.values);
     println!("  β₀ = {} (one component)", betti.b0());
-    println!("  β₁ = {} (no loops — every loop on S² bounds a disk)", betti.b1());
+    println!(
+        "  β₁ = {} (no loops — every loop on S² bounds a disk)",
+        betti.b1()
+    );
     println!("  β₂ = {} (one void — the enclosed cavity)", betti.b2());
 
     // Euler-Poincaré: χ = β₀ - β₁ + β₂ = 1 - 0 + 1 = 2.
@@ -97,7 +107,10 @@ fn exercise_1_3() {
 
     let radii = [0.5, 0.9, 1.05, 1.45, 2.0];
     println!("  Points: (0,0), (1,0), (1,1), (0,1)\n");
-    println!("  {:>6} │ {:>12} │ {:>4} │ {:>12} │ topology", "radius", "f-vector", "χ", "β");
+    println!(
+        "  {:>6} │ {:>12} │ {:>4} │ {:>12} │ topology",
+        "radius", "f-vector", "χ", "β"
+    );
     println!("  ───────┼──────────────┼──────┼──────────────┼─────────────────");
 
     for &r in &radii {
@@ -114,12 +127,14 @@ fn exercise_1_3() {
             "contractible".to_string()
         };
 
-        println!("  {:>6.2} │ {:>12} │ {:>4} │ {:>12} │ {}",
+        println!(
+            "  {:>6.2} │ {:>12} │ {:>4} │ {:>12} │ {}",
             r,
             format!("{:?}", f),
             chi,
             format!("{:?}", betti.values),
-            topo);
+            topo
+        );
     }
     println!();
     println!("  Key insight: at r ≈ 1.05, all 4 side edges exist but no");
@@ -135,13 +150,22 @@ fn exercise_1_3() {
 fn exercise_1_4() {
     println!("── Exercise 1.4: Faces of a tetrahedron ────────────────");
     let tet = Simplex::new([0, 1, 2, 3]);
-    println!("  Tetrahedron σ = {:?}, dim = {}\n", tet.vertices(), tet.dimension());
+    println!(
+        "  Tetrahedron σ = {:?}, dim = {}\n",
+        tet.vertices(),
+        tet.dimension()
+    );
 
     println!("  Faces (obtained by removing one vertex):");
     for (i, face) in tet.faces() {
         let sign = if i % 2 == 0 { "+" } else { "-" };
-        println!("    i={}: remove v_{} → {} {:?}",
-            i, tet.vertices()[i], sign, face.vertices());
+        println!(
+            "    i={}: remove v_{} → {} {:?}",
+            i,
+            tet.vertices()[i],
+            sign,
+            face.vertices()
+        );
     }
     println!("\n  The boundary is: ∂σ = +[1,2,3] - [0,2,3] + [0,1,3] - [0,1,2]");
     println!("  Over Z/2Z (mod 2), all signs become +1.\n");
@@ -155,13 +179,28 @@ fn exercise_1_5() {
     println!("── Exercise 1.5: f-vector → frequency ratios ───────────");
 
     let complexes: Vec<(&str, Vec<Vec<usize>>)> = vec![
-        ("Filled triangle", vec![vec![0,1,2]]),
-        ("Hollow tetrahedron (S²)", vec![vec![0,1,2], vec![0,1,3], vec![0,2,3], vec![1,2,3]]),
-        ("Two triangles sharing an edge", vec![vec![0,1,2], vec![0,1,3]]),
-        ("Octahedron (S²)", vec![
-            vec![0,1,2], vec![0,2,3], vec![0,3,4], vec![0,4,1],
-            vec![5,1,2], vec![5,2,3], vec![5,3,4], vec![5,4,1],
-        ]),
+        ("Filled triangle", vec![vec![0, 1, 2]]),
+        (
+            "Hollow tetrahedron (S²)",
+            vec![vec![0, 1, 2], vec![0, 1, 3], vec![0, 2, 3], vec![1, 2, 3]],
+        ),
+        (
+            "Two triangles sharing an edge",
+            vec![vec![0, 1, 2], vec![0, 1, 3]],
+        ),
+        (
+            "Octahedron (S²)",
+            vec![
+                vec![0, 1, 2],
+                vec![0, 2, 3],
+                vec![0, 3, 4],
+                vec![0, 4, 1],
+                vec![5, 1, 2],
+                vec![5, 2, 3],
+                vec![5, 3, 4],
+                vec![5, 4, 1],
+            ],
+        ),
     ];
 
     for (name, simplices) in &complexes {
@@ -170,7 +209,8 @@ fn exercise_1_5() {
             k.insert_simplex(s);
         }
         let f = k.f_vector();
-        let ratios: Vec<String> = f.windows(2)
+        let ratios: Vec<String> = f
+            .windows(2)
             .map(|w| format!("{}/{} = {:.3}", w[1], w[0], w[1] as f64 / w[0] as f64))
             .collect();
 
@@ -181,16 +221,30 @@ fn exercise_1_5() {
         // Show what interval these ratios approximate.
         for w in f.windows(2) {
             let r = w[1] as f64 / w[0] as f64;
-            let interval = if (r - 1.0).abs() < 0.1 { "unison" }
-                else if (r - 1.2).abs() < 0.1 { "minor third" }
-                else if (r - 1.25).abs() < 0.1 { "major third" }
-                else if (r - 1.333).abs() < 0.1 { "fourth" }
-                else if (r - 1.5).abs() < 0.1 { "fifth" }
-                else if (r - 1.667).abs() < 0.1 { "minor sixth" }
-                else if (r - 2.0).abs() < 0.15 { "octave" }
-                else { "non-standard" };
-            println!("    f_{}/f_{} ≈ {:.3} → {}",
-                f.len().min(2), f.len().min(1), r, interval);
+            let interval = if (r - 1.0).abs() < 0.1 {
+                "unison"
+            } else if (r - 1.2).abs() < 0.1 {
+                "minor third"
+            } else if (r - 1.25).abs() < 0.1 {
+                "major third"
+            } else if (r - 1.333).abs() < 0.1 {
+                "fourth"
+            } else if (r - 1.5).abs() < 0.1 {
+                "fifth"
+            } else if (r - 1.667).abs() < 0.1 {
+                "minor sixth"
+            } else if (r - 2.0).abs() < 0.15 {
+                "octave"
+            } else {
+                "non-standard"
+            };
+            println!(
+                "    f_{}/f_{} ≈ {:.3} → {}",
+                f.len().min(2),
+                f.len().min(1),
+                r,
+                interval
+            );
         }
         println!();
     }
@@ -205,11 +259,14 @@ fn exercise_1_6() {
     let mut k = SimplicialComplex::new();
     k.insert_simplex(&[0, 1]);
     k.insert_simplex(&[1, 2]);
-    k.insert_simplex(&[3, 4]);  // separate component
-    k.insert_simplex(&[5]);     // isolated vertex
+    k.insert_simplex(&[3, 4]); // separate component
+    k.insert_simplex(&[5]); // isolated vertex
 
     println!("  Complex: edges [0,1], [1,2], [3,4], vertex [5]");
-    println!("  Via union-find:      {} components", k.connected_components());
+    println!(
+        "  Via union-find:      {} components",
+        k.connected_components()
+    );
     let betti = BettiNumbers::compute(&k);
     println!("  Via rank-nullity:    β₀ = {}", betti.b0());
     assert_eq!(k.connected_components(), betti.b0());

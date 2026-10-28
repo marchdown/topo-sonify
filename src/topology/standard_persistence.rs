@@ -216,7 +216,11 @@ pub fn compute_persistence_twist(filtered: &FilteredComplex) -> PersistenceDiagr
                 let death = filtered.simplices[j].filtration;
                 let dim = filtered.simplices[i].dimension() as usize;
                 if (death - birth).abs() > 1e-12 {
-                    pairs.push(PersistencePair { birth, death, dimension: dim });
+                    pairs.push(PersistencePair {
+                        birth,
+                        death,
+                        dimension: dim,
+                    });
                 }
             }
         }
@@ -255,13 +259,17 @@ mod tests {
         let pd = compute_persistence(&fc);
 
         // Should have exactly 1 essential H₀ class (the final component).
-        let h0_essential: Vec<_> = pd.pairs.iter()
+        let h0_essential: Vec<_> = pd
+            .pairs
+            .iter()
             .filter(|p| p.dimension == 0 && p.is_essential())
             .collect();
         assert_eq!(h0_essential.len(), 1);
 
         // Should have 2 finite H₀ pairs (two components merging).
-        let h0_finite: Vec<_> = pd.pairs.iter()
+        let h0_finite: Vec<_> = pd
+            .pairs
+            .iter()
             .filter(|p| p.dimension == 0 && !p.is_essential())
             .collect();
         assert_eq!(h0_finite.len(), 2);
@@ -276,7 +284,10 @@ mod tests {
 
         // Should have at least one H₁ pair (a loop that appears then gets filled).
         let h1: Vec<_> = pd.pairs.iter().filter(|p| p.dimension == 1).collect();
-        assert!(!h1.is_empty(), "Expected at least one H₁ feature for a square");
+        assert!(
+            !h1.is_empty(),
+            "Expected at least one H₁ feature for a square"
+        );
     }
 
     #[test]

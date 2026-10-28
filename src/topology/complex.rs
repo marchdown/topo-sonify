@@ -70,7 +70,10 @@ impl SimplicialComplex {
         if dim < 0 || dim as usize >= self.by_dim.len() {
             return Vec::new();
         }
-        self.by_dim[dim as usize].iter().map(|&i| &self.all[i]).collect()
+        self.by_dim[dim as usize]
+            .iter()
+            .map(|&i| &self.all[i])
+            .collect()
     }
 
     /// Number of k-simplices for a given dimension.
@@ -129,7 +132,10 @@ impl SimplicialComplex {
 
     /// Star of a simplex σ: all simplices τ such that σ is a face of τ.
     pub fn star(&self, sigma: &Simplex) -> Vec<&Simplex> {
-        self.all.iter().filter(|tau| sigma.is_face_of(tau)).collect()
+        self.all
+            .iter()
+            .filter(|tau| sigma.is_face_of(tau))
+            .collect()
     }
 
     /// Link of a simplex σ: faces of St(σ) that don't intersect σ.
@@ -171,7 +177,11 @@ impl SimplicialComplex {
             }
         }
 
-        BoundaryMatrix { rows, cols, entries }
+        BoundaryMatrix {
+            rows,
+            cols,
+            entries,
+        }
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &Simplex> {
@@ -221,8 +231,7 @@ impl SimplicialComplex {
         for i in 0..n {
             for j in (i + 1)..n {
                 dist_sq.push(
-                    (points[i][0] - points[j][0]).powi(2)
-                        + (points[i][1] - points[j][1]).powi(2),
+                    (points[i][0] - points[j][0]).powi(2) + (points[i][1] - points[j][1]).powi(2),
                 );
             }
         }
@@ -289,10 +298,7 @@ impl SimplicialComplex {
                     let mut pi = pi_k + 1;
                     let mut pj = adj_fwd[j].partition_point(|&x| x <= k);
                     let mut pk = 0usize;
-                    while pi < adj_fwd[i].len()
-                        && pj < adj_fwd[j].len()
-                        && pk < adj_fwd[k].len()
-                    {
+                    while pi < adj_fwd[i].len() && pj < adj_fwd[j].len() && pk < adj_fwd[k].len() {
                         let li = adj_fwd[i][pi];
                         let lj = adj_fwd[j][pj];
                         let lk = adj_fwd[k][pk];
@@ -303,9 +309,15 @@ impl SimplicialComplex {
                             pj += 1;
                             pk += 1;
                         } else {
-                            if li < m { pi += 1; }
-                            if lj < m { pj += 1; }
-                            if lk < m { pk += 1; }
+                            if li < m {
+                                pi += 1;
+                            }
+                            if lj < m {
+                                pj += 1;
+                            }
+                            if lk < m {
+                                pk += 1;
+                            }
                         }
                     }
                 }

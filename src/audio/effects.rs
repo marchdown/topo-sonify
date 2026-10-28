@@ -1,3 +1,18 @@
+/// Upper bound on the summed feedback gain of the delay network (see `set_from_persistence`).
+const MAX_LOOP_GAIN: f64 = 0.5;
+
+/// Upper bound on the summed level of the wet taps, so the echo bus is at most half as loud
+/// as the loop it reads from.
+///
+/// Together the two bounds give |out| <= a * (1 + MAX_WET_LEVEL / (1 - MAX_LOOP_GAIN)) = 2a
+/// for any input bounded by a, so the clamp in `process` stays a guard for a loud input and
+/// never shapes the sound of a quiet one.
+const MAX_WET_LEVEL: f64 = 0.5;
+
+/// Cap on the number of wavefold stages in `BettiDistortion`. Each stage has small-signal gain
+/// pi/2, so the stage count sets an exponential gain, (pi/2)^stages. Two stages keep it under 2.5.
+const MAX_FOLD_STAGES: usize = 2;
+
 /// Delay effect parameterized by persistence pairs.
 ///
 /// Each persistence pair (birth, death) in the diagram maps to a delay tap:
@@ -51,7 +66,8 @@ impl PersistenceDelay {
             } else {
                 death - birth
             };
-            let delay_secs = (birth / max_filtration) * (self.max_delay_samples as f64 / self.sample_rate);
+            let delay_secs =
+                (birth / max_filtration) * (self.max_delay_samples as f64 / self.sample_rate);
             let delay_samples = ((delay_secs * self.sample_rate) as usize)
                 .min(self.max_delay_samples - 1)
                 .max(1);
@@ -63,6 +79,29 @@ impl PersistenceDelay {
                 feedback,
                 level,
             });
+        }
+
+        // Every persistence pair adds a tap, and a point cloud of n points has n - 1 finite
+        // dimension-0 pairs alone. Unscaled, the loop gain grows with the number of pairs.
+        //
+        // The wet path is out = x + sum_i level_i * y[n - d_i], and the loop is
+        // y[n] = x[n] + sum_i g_i * y[n - d_i] with g_i = feedback_i * level_i. That loop is stable
+        // when sum |g_i| < 1, and then |y| <= a / (1 - G) for an input bounded by a.
+        // Scale so that sum level_i <= MAX_WET_LEVEL and G <= MAX_LOOP_GAIN. Uniform scaling keeps
+        // the ratios: higher dimensions stay quieter and long-lived features still echo longest.
+        let level_sum: f64 = self.taps.iter().map(|t| t.level).sum();
+        if level_sum > MAX_WET_LEVEL {
+            let scale = MAX_WET_LEVEL / level_sum;
+            for tap in &mut self.taps {
+                tap.level *= scale;
+            }
+        }
+        let loop_gain: f64 = self.taps.iter().map(|t| t.feedback * t.level).sum();
+        if loop_gain > MAX_LOOP_GAIN {
+            let scale = MAX_LOOP_GAIN / loop_gain;
+            for tap in &mut self.taps {
+                tap.feedback *= scale;
+            }
         }
     }
 
@@ -79,9 +118,11 @@ impl PersistenceDelay {
             fb_sum += delayed * tap.feedback * tap.level;
         }
 
+        // The clamp on the write is the stability guard for a loud input. The wet output is not
+        // clamped here: limiting belongs once, at the end of the chain, not in the middle of it.
         self.buffer[self.write_pos] = fb_sum.clamp(-1.0, 1.0);
         self.write_pos = (self.write_pos + 1) % self.max_delay_samples;
-        output.clamp(-1.0, 1.0)
+        output
     }
 
     pub fn process_buffer(&mut self, buffer: &mut [f64]) {
@@ -172,9 +213,9 @@ impl CurvatureReverb {
     pub fn from_euler_characteristic(chi: isize, sample_rate: f64) -> Self {
         // Map curvature to reverb time: higher genus → longer reverb
         let rt60 = match chi {
-            c if c > 0 => 0.5 + 0.3 / c as f64,     // short
-            0 => 1.5,                                  // medium
-            c => 1.5 + 0.5 * (-c as f64),             // long
+            c if c > 0 => 0.5 + 0.3 / c as f64, // short
+            0 => 1.5,                           // medium
+            c => 1.5 + 0.5 * (-c as f64),       // long
         };
 
         let damping = match chi {
@@ -261,7 +302,7 @@ pub struct BettiDistortion {
 impl BettiDistortion {
     pub fn from_betti(b0: usize, b1: usize, b2: usize) -> Self {
         Self {
-            fold_stages: b0.max(1),
+            fold_stages: b0.clamp(1, MAX_FOLD_STAGES),
             feedback: (b1 as f64 * 0.15).min(0.9),
             asymmetry: b2 as f64 * 0.1,
             drive: 1.0,
@@ -317,12 +358,80 @@ mod tests {
         }
     }
 
+    /// Many persistence pairs, as a 10-point circle produces. The delay is the feedback network
+    /// y[n] = x[n] + sum_i g_i y[n - d_i], which is stable only if sum |g_i| < 1. The bound below follows
+    /// from that: |y| <= a / (1 - G), and the wet output adds at most sum(level) * |y|.
+    /// The internal clamp(-1, 1) must never be what keeps the output in range, so use a quiet input.
+    fn many_pairs() -> Vec<(f64, f64, usize)> {
+        let mut pairs: Vec<(f64, f64, usize)> =
+            (1..=40).map(|i| (0.0, 0.02 * i as f64 + 0.1, 0)).collect();
+        pairs.extend((1..=10).map(|i| (0.05 * i as f64, 0.05 * i as f64 + 0.4, 1)));
+        pairs.push((0.0, f64::INFINITY, 0));
+        pairs
+    }
+
+    #[test]
+    fn delay_loop_gain_bounded_for_sine() {
+        let sr = 48000.0;
+        let mut delay = PersistenceDelay::new(sr, 2.0);
+        delay.set_from_persistence(&many_pairs(), 1.0);
+        let a = 0.2;
+        let mut peak: f64 = 0.0;
+        for n in 0..(5 * 48000) {
+            let x = a * (std::f64::consts::TAU * 220.0 * n as f64 / sr).sin();
+            peak = peak.max(delay.process(x).abs());
+        }
+        let bound = a * (1.0 + MAX_WET_LEVEL / (1.0 - MAX_LOOP_GAIN));
+        assert!(
+            peak < bound + 1e-9,
+            "delay peak {peak} exceeds the bound {bound}: feedback is unstable"
+        );
+    }
+
+    #[test]
+    fn delay_loop_gain_bounded_for_dc() {
+        let mut delay = PersistenceDelay::new(48000.0, 2.0);
+        delay.set_from_persistence(&many_pairs(), 1.0);
+        let mut peak: f64 = 0.0;
+        for _ in 0..(5 * 48000) {
+            peak = peak.max(delay.process(0.2).abs());
+        }
+        let bound = 0.2 * (1.0 + MAX_WET_LEVEL / (1.0 - MAX_LOOP_GAIN));
+        assert!(
+            peak < bound + 1e-9,
+            "delay peak {peak} exceeds the bound {bound}: feedback is unstable"
+        );
+    }
+
     #[test]
     fn reverb_stability() {
         let mut reverb = CurvatureReverb::from_euler_characteristic(2, 44100.0);
         for _ in 0..44100 {
             let out = reverb.process(0.0);
             assert!(out.abs() < 10.0); // shouldn't blow up
+        }
+    }
+
+    /// Each sine fold has small-signal gain pi/2, so k stages multiply to (pi/2)^k: x1.6 for one
+    /// component, x9.5 for five, x91 for ten. A quiet signal must not turn into fuzz because the
+    /// cloud has several components.
+    #[test]
+    fn distortion_small_signal_gain_is_bounded() {
+        let a = 0.05;
+        let limit = (std::f64::consts::FRAC_PI_2).powi(MAX_FOLD_STAGES as i32) * 1.01;
+        for b0 in [1, 2, 5, 10, 50] {
+            let mut dist = BettiDistortion::from_betti(b0, 0, 0);
+            let mut peak: f64 = 0.0;
+            for n in 0..4800 {
+                let x = a * (std::f64::consts::TAU * 220.0 * n as f64 / 48000.0).sin();
+                peak = peak.max(dist.process(x).abs());
+            }
+            assert!(
+                peak / a <= limit,
+                "b0 = {b0}: small-signal gain {:.1} exceeds {:.2}",
+                peak / a,
+                limit
+            );
         }
     }
 

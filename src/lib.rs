@@ -2,19 +2,18 @@
 // the index variable is used in arithmetic, not just for array access.
 #![allow(clippy::needless_range_loop)]
 
-pub mod topology;
 pub mod audio;
 pub mod instruments;
 pub mod mapping;
+pub mod topology;
 
 // Re-export the full public API.
-pub use topology::{
-    Simplex, SimplicialComplex, BettiNumbers, PersistenceDiagram, PersistencePair,
-    FilteredComplex, HodgeLaplacian, DiscreteMorseFunction,
-    compute_persistence, compute_persistence_twist,
-    bottleneck_distance, wasserstein_distance,
-};
 pub use mapping::TopologySonifier;
+pub use topology::{
+    bottleneck_distance, compute_persistence, compute_persistence_twist, wasserstein_distance,
+    BettiNumbers, DiscreteMorseFunction, FilteredComplex, HodgeLaplacian, PersistenceDiagram,
+    PersistencePair, Simplex, SimplicialComplex,
+};
 
 use wasm_bindgen::prelude::*;
 
@@ -38,10 +37,7 @@ impl WasmSonifier {
     /// and wires everything into the audio engine.
     #[wasm_bindgen(constructor)]
     pub fn new(points_flat: &[f64], radius: f64, base_freq: f64, sample_rate: f64) -> Self {
-        let points: Vec<[f64; 2]> = points_flat
-            .chunks(2)
-            .map(|c| [c[0], c[1]])
-            .collect();
+        let points: Vec<[f64; 2]> = points_flat.chunks(2).map(|c| [c[0], c[1]]).collect();
         Self {
             inner: TopologySonifier::from_point_cloud(&points, radius, base_freq, sample_rate),
         }
@@ -126,10 +122,7 @@ impl WasmTopology {
     /// Compute Betti numbers of a VR complex from a point cloud.
     #[wasm_bindgen]
     pub fn betti_from_points(points_flat: &[f64], radius: f64) -> Vec<usize> {
-        let points: Vec<[f64; 2]> = points_flat
-            .chunks(2)
-            .map(|c| [c[0], c[1]])
-            .collect();
+        let points: Vec<[f64; 2]> = points_flat.chunks(2).map(|c| [c[0], c[1]]).collect();
         let complex = SimplicialComplex::vietoris_rips(&points, radius);
         BettiNumbers::compute(&complex).values
     }
@@ -137,10 +130,7 @@ impl WasmTopology {
     /// Compute full persistence diagram from a point cloud. Returns JSON.
     #[wasm_bindgen]
     pub fn persistence_from_points(points_flat: &[f64], max_radius: f64) -> String {
-        let points: Vec<[f64; 2]> = points_flat
-            .chunks(2)
-            .map(|c| [c[0], c[1]])
-            .collect();
+        let points: Vec<[f64; 2]> = points_flat.chunks(2).map(|c| [c[0], c[1]]).collect();
         let fc = FilteredComplex::vietoris_rips(&points, max_radius);
         let pd = compute_persistence_twist(&fc);
         serde_json::to_string(&pd.pairs).unwrap_or_default()
@@ -149,10 +139,7 @@ impl WasmTopology {
     /// Compute Hodge Laplacian eigenvalues. Returns JSON array of arrays.
     #[wasm_bindgen]
     pub fn hodge_eigenvalues(points_flat: &[f64], radius: f64) -> String {
-        let points: Vec<[f64; 2]> = points_flat
-            .chunks(2)
-            .map(|c| [c[0], c[1]])
-            .collect();
+        let points: Vec<[f64; 2]> = points_flat.chunks(2).map(|c| [c[0], c[1]]).collect();
         let complex = SimplicialComplex::vietoris_rips(&points, radius);
         let mut all_evs: Vec<Vec<f64>> = Vec::new();
         for dim in 0..=complex.dimension() as usize {
@@ -166,10 +153,7 @@ impl WasmTopology {
     /// Compute f-vector and Euler characteristic. Returns JSON.
     #[wasm_bindgen]
     pub fn complex_info(points_flat: &[f64], radius: f64) -> String {
-        let points: Vec<[f64; 2]> = points_flat
-            .chunks(2)
-            .map(|c| [c[0], c[1]])
-            .collect();
+        let points: Vec<[f64; 2]> = points_flat.chunks(2).map(|c| [c[0], c[1]]).collect();
         let complex = SimplicialComplex::vietoris_rips(&points, radius);
         let betti = BettiNumbers::compute(&complex);
         serde_json::to_string(&serde_json::json!({
@@ -178,6 +162,7 @@ impl WasmTopology {
             "betti": betti.values,
             "dimension": complex.dimension(),
             "num_simplices": complex.size(),
-        })).unwrap_or_default()
+        }))
+        .unwrap_or_default()
     }
 }

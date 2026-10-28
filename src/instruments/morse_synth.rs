@@ -50,7 +50,7 @@ struct MorseVoice {
 
 #[derive(Debug, Clone, Copy)]
 pub struct MorseEvent {
-    pub time: f64,       // when to trigger (seconds)
+    pub time: f64, // when to trigger (seconds)
     pub event_type: MorseEventType,
     pub frequency: f64,
     pub dimension: usize,
@@ -312,17 +312,8 @@ mod tests {
 
     #[test]
     fn morse_synth_from_pairs() {
-        let pairs = vec![
-            (0.0, 0.5, 0),
-            (0.1, 0.8, 0),
-            (0.3, 0.6, 1),
-        ];
-        let mut synth = MorseSynth::from_persistence_pairs(
-            &pairs,
-            (110.0, 880.0),
-            1.0,
-            44100.0,
-        );
+        let pairs = vec![(0.0, 0.5, 0), (0.1, 0.8, 0), (0.3, 0.6, 1)];
+        let mut synth = MorseSynth::from_persistence_pairs(&pairs, (110.0, 880.0), 1.0, 44100.0);
         let mut buffer = vec![0.0; 44100]; // 1 second
         synth.fill_buffer(&mut buffer);
         let energy: f64 = buffer.iter().map(|s| s * s).sum();

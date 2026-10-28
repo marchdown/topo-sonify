@@ -263,19 +263,34 @@ button.danger { background: var(--accent2); }
 let wasm = null;
 let wasmReady = false;
 
+// pkg/ is a sibling of index.html on GitHub Pages (the site is assembled flat) and one level up
+// when the repository root is served and this page is opened at /web/. fetch() resolves on a 404
+// instead of throwing, so the response has to be checked, not merely awaited.
+const WASM_CANDIDATES = ['./pkg/topo_sonify.js', '../pkg/topo_sonify.js'];
+
+async function findWasmModule() {
+  for (const path of WASM_CANDIDATES) {
+    try {
+      const response = await fetch(path, {method: 'HEAD'});
+      if (response.ok) return path;
+    } catch { /* network error: try the next candidate */ }
+  }
+  throw new Error('topo_sonify.js not found at ' + WASM_CANDIDATES.join(' or '));
+}
+
 try {
-  // Try pkg/ relative to current page (works on GitHub Pages where index.html
-  // and pkg/ are siblings), then fall back to ../pkg/ (local dev with web/ subdir).
-  let wasmPath = './pkg/topo_sonify.js';
-  try { await fetch(wasmPath, {method: 'HEAD'}); } catch { wasmPath = '../pkg/topo_sonify.js'; }
-  const wasmModule = await import(wasmPath);
+  const wasmModule = await import(await findWasmModule());
   await wasmModule.default();
   wasm = wasmModule;
   wasmReady = true;
   console.log('WASM loaded — using Rust topology engine');
 } catch (e) {
-  console.log('WASM not available — using JS fallback. Build with: wasm-pack build --target web');
+  console.warn('WASM not available — using JS fallback. Build with: wasm-pack build --target web.', e);
 }
+
+// A feature that never dies (an essential class) has no finite death. JSON cannot carry Infinity,
+// so the Rust engine serializes it as null; other paths use Infinity or a negative sentinel.
+const isEssential = (p) => p.death === null || p.death === undefined || p.death === Infinity || p.death < 0;
 
 // ─── State ────────────────────────────────────────────────────────
 let points = [];
@@ -388,7 +403,7 @@ const updateTopology = () => {
     // Compute entropy via persistence.
     const pdJson = wasm.WasmTopology.persistence_from_points(flat, radius);
     const pairs = JSON.parse(pdJson);
-    const finitePers = pairs.filter(p => p.death !== Infinity).map(p => p.death - p.birth);
+    const finitePers = pairs.filter(p => !isEssential(p)).map(p => p.death - p.birth);
     const totalPers = finitePers.reduce((a, b) => a + b, 0);
     let entropy = 0;
     if (totalPers > 0) {
@@ -485,7 +500,7 @@ const drawPersistenceFromPairs = (pairs, maxRadius) => {
 
   const colors = ['#7b68ee', '#ff6b6b', '#4ecdc4', '#e0af68'];
   pairs.forEach(p => {
-    if (p.death === Infinity || p.death < 0) return; // skip essential classes for now
+    if (isEssential(p)) return; // skip essential classes for now
     const x = (p.birth / maxVal) * w;
     const y = h - (p.death / maxVal) * h;
     const r = Math.min(8, 2 + (p.death - p.birth) / maxVal * 20); // size ∝ persistence
