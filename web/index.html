@@ -288,6 +288,10 @@ try {
   console.warn('WASM not available — using JS fallback. Build with: wasm-pack build --target web.', e);
 }
 
+// A feature that never dies (an essential class) has no finite death. JSON cannot carry Infinity,
+// so the Rust engine serializes it as null; other paths use Infinity or a negative sentinel.
+const isEssential = (p) => p.death === null || p.death === undefined || p.death === Infinity || p.death < 0;
+
 // ─── State ────────────────────────────────────────────────────────
 let points = [];
 let audioCtx = null;
@@ -399,7 +403,7 @@ const updateTopology = () => {
     // Compute entropy via persistence.
     const pdJson = wasm.WasmTopology.persistence_from_points(flat, radius);
     const pairs = JSON.parse(pdJson);
-    const finitePers = pairs.filter(p => p.death !== Infinity).map(p => p.death - p.birth);
+    const finitePers = pairs.filter(p => !isEssential(p)).map(p => p.death - p.birth);
     const totalPers = finitePers.reduce((a, b) => a + b, 0);
     let entropy = 0;
     if (totalPers > 0) {
@@ -496,7 +500,7 @@ const drawPersistenceFromPairs = (pairs, maxRadius) => {
 
   const colors = ['#7b68ee', '#ff6b6b', '#4ecdc4', '#e0af68'];
   pairs.forEach(p => {
-    if (p.death === Infinity || p.death < 0) return; // skip essential classes for now
+    if (isEssential(p)) return; // skip essential classes for now
     const x = (p.birth / maxVal) * w;
     const y = h - (p.death / maxVal) * h;
     const r = Math.min(8, 2 + (p.death - p.birth) / maxVal * 20); // size ∝ persistence
