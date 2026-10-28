@@ -11,7 +11,7 @@ Working ledger. Read on entry, update on exit.
   Each candidate has a published value to test against before any sound is made.
 
 ## Status
-- Research prototype, April to July 2026. Math core, instruments and WASM build work; 44 tests pass; clippy is clean.
+- Research prototype, April to July 2026. Math core, instruments and WASM build work; 49 tests pass; clippy is clean.
 - Development paused after 2026-07-13. README, LICENSE and this ledger were brought up to date on 2026-10-27.
 
 ## Blockers
@@ -26,8 +26,20 @@ Working ledger. Read on entry, update on exit.
   path and cycle graphs (lambda_k = 2 - 2cos(k pi / n), 2 - 2cos(2 pi k / n)). No new dependencies needed.
   Next: Sierpinski gasket spectrum and its spectral dimension 2 ln 3 / ln 5, then bond percolation (p_c = 1/2).
 
+## Open design questions (found 2026-10-28, owner to decide)
+- `BettiDistortion` now caps wavefold stages at 2 (`MAX_FOLD_STAGES`). Each stage has small-signal gain pi/2, so the
+  old stage count of beta_0 gave gain (pi/2)^beta_0, which turned any cloud with several components into fuzz.
+  The cap is a musical choice. Alternatives: unit-gain stages with the drive carrying the intensity.
+- Loudness depends on the topology: the final RMS is about 0.22 in the browser for the circle preset and about 0.6
+  for a 30-point random cloud. If that matters, add loudness normalisation at the end of the chain.
+- Essential persistence classes (never dying) are skipped on the diagram. They are the most informative points, such
+  as the surviving loop; drawing them on a top "infinity" line is the natural next step.
+
 ## Notes
 - Ledger established 2026-06-03.
-- Not re-tested on 2026-10-27: browser audio playback of `web/index.html`. Tests, example, and WASM build were run.
+- 2026-10-28: browser playback checked in Chrome by measuring the samples the page emits (RMS, peak, flat-topped
+  count) with real clicks for Circle, Play Drone, Pluck and Play Morse. Not checked by ear, and not on a phone.
+- 2026-10-28 fixes: WASM loader fallback (`fetch` does not throw on 404), runaway delay feedback, exponential
+  distortion gain, hard clamp replaced by a single `tanh` limiter, null death treated as essential on the page.
 
 _updated: 2026-10-27 · session: Claude Code, branch polish/readme-license-ledger_

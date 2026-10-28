@@ -22,7 +22,7 @@ paused; `NEEDS.md` has the current state and the next steps.
 ## Run it
 
 ```sh
-cargo test                                    # 44 tests
+cargo test                                    # 49 tests
 cargo run --example ch1_simplicial_complexes  # also ch2_homology, ch3_persistence
 wasm-pack build --target web --release        # about 20 s, about 158 KB of wasm
 ```
